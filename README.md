@@ -29,6 +29,7 @@ Classifies aerial and satellite images into **45 land-use scene categories** usi
 - [Results](#results)
 - [Project structure](#project-structure)
 - [Getting started](#getting-started)
+- [Serving and deployment](#serving-and-deployment)
 - [Reproducibility](#reproducibility)
 - [Author](#author)
 - [Dataset and citation](#dataset-and-citation)
@@ -114,11 +115,17 @@ The full 45×45 matrix and the 10 best classes are in [`reports/figures/`](repor
 │   ├── train.py                # two-phase training CLI
 │   ├── evaluate.py             # test metrics, reports, confusion matrices CLI
 │   ├── predict.py              # inference CLI for images / folders
+│   ├── inference.py            # Classifier: load once, predict from paths or bytes
+│   ├── api.py                  # FastAPI REST service
+│   ├── hub.py                  # publish model + demo to the Hugging Face Hub
 │   ├── visualize.py            # plotting helpers
 │   └── utils.py                # seeding, logging, JSON helpers
-├── tests/                      # unit tests + tiny end-to-end training smoke test
+├── demo/                       # Gradio app, deployed as a Hugging Face Space
+├── tests/                      # unit, API, demo and end-to-end tests
 ├── reports/figures/            # figures from the reported run
-└── results/                    # metrics and per-class report from the reported run
+├── results/                    # metrics and per-class report from the reported run
+├── Dockerfile                  # container for the REST API
+└── requirements-api.txt        # extra dependencies for serving
 ```
 
 ## Getting started
@@ -192,8 +199,70 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The tests build a tiny synthetic dataset, so they need neither the real data nor the ImageNet
-weights. The end-to-end test trains a small model for one epoch per phase on the CPU.
+The tests build a tiny synthetic dataset and a small untrained model, so they need neither the
+real data, the ImageNet weights nor network access. They cover the data pipeline, model, the
+train → evaluate → predict CLIs, the REST API, the Gradio demo and the Hub upload.
+
+## Serving and deployment
+
+```
+ train.py ──► model.keras + class_names.json ──► Hugging Face Hub (model repo)
+                                                     │
+                         ┌───────────────────────────┴──────────────────────────┐
+                         ▼                                                      ▼
+            Gradio demo (Hugging Face Space)                  FastAPI service (Docker)
+```
+
+Every entry point (CLI, API, demo) uses the same `Classifier` in
+[`inference.py`](src/resisc45/inference.py), so images are always preprocessed exactly as in
+training. The model is loaded from `RESISC45_MODEL_PATH` if that is set, otherwise from the Hub
+repo in `RESISC45_HUB_REPO`.
+
+### Gradio demo
+
+```bash
+pip install -e ".[demo]"
+RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py   # http://localhost:7860
+```
+
+### REST API
+
+```bash
+pip install -e ".[api]"
+RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python -m resisc45.api
+curl -F "file=@demo/examples/harbor.jpg" "http://localhost:8000/predict?top_k=3"
+```
+
+Interactive docs are at `http://localhost:8000/docs`.
+
+| Endpoint | Description |
+|---|---|
+| `GET /health` | liveness check |
+| `GET /classes` | the 45 class names |
+| `POST /predict?top_k=5` | multipart image upload → label, confidence, top-k probabilities |
+
+### Docker
+
+```bash
+docker build -t resisc45-api .
+docker run -p 8000:8000 -v "$(pwd)/runs/<timestamp>:/models" resisc45-api
+```
+
+The image holds code and dependencies only. The model is mounted at `/models`, or downloaded from
+the Hub when you pass `-e RESISC45_MODEL_PATH= -e RESISC45_HUB_REPO=<user>/<repo>`.
+
+### Publish to the Hugging Face Hub
+
+```bash
+hf auth login
+python -m resisc45.hub model --model runs/<timestamp>/model.keras --repo <hf-user>/resisc45-resnet50
+python -m resisc45.hub space --repo <hf-user>/aerial-scene-classifier --model-repo <hf-user>/resisc45-resnet50
+```
+
+The first command checks that the model and class names match, then uploads them with a model card
+built from [`results/test_metrics.json`](results/test_metrics.json). The second deploys
+[`demo/`](demo) as a Gradio Space, which installs this package from GitHub and loads the model
+from the Hub.
 
 ## Reproducibility
 

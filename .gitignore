@@ -1,6 +1,7 @@
 # --- Data, models and run outputs (never commit) ---
 data/
 runs/
+models/
 *.zip
 *.keras
 *.h5

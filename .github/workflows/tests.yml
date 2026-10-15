@@ -15,9 +15,20 @@ jobs:
           cache: pip
       - name: Install
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-api.txt
           pip install -e ".[dev]"
       - name: Lint
-        run: ruff check src tests
+        run: |
+          ruff check src tests demo
+          ruff format --check src tests demo
       - name: Test
         run: pytest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t resisc45-api .
+      - name: Smoke test (imports and CLI entry point)
+        run: docker run --rm --entrypoint python resisc45-api -c "import resisc45.api; print('ok')"
