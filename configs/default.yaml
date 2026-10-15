@@ -1,0 +1,36 @@
+# Default configuration. Reproduces the reported result (94.6% test accuracy).
+# Any key can be overridden by copying this file and passing --config.
+
+seed: 42
+
+# Data
+img_size: 224              # ResNet-50 was pretrained on 224x224 ImageNet images
+batch_size: 32
+val_size: 0.15             # stratified 70 / 15 / 15 split
+test_size: 0.15
+expected_classes: 45       # dataset sanity checks; set to null to skip
+expected_per_class: 700
+
+# Model
+pretrained_weights: imagenet   # null = random init (used by the tests)
+dense_units: 256
+dropout_pool: 0.30
+dropout_head: 0.20
+l2: 0.0001
+
+# Phase 1: frozen backbone, train the classification head only
+head_epochs: 25
+head_lr: 0.001
+head_lr_factor: 0.5
+head_min_lr: 0.000001
+
+# Phase 2: fine-tune the top residual stages (BatchNorm stays frozen)
+fine_tune_epochs: 15
+fine_tune_lr: 0.00001
+fine_tune_lr_factor: 0.3
+fine_tune_min_lr: 0.0000001
+fine_tune_stages: [conv4, conv5]
+
+# Callbacks
+early_stopping_patience: 5
+lr_patience: 2
