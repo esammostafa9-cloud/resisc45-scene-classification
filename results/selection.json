@@ -1,0 +1,5 @@
+{
+  "phase1_best_val_accuracy": 0.8832,
+  "phase2_best_val_accuracy": 0.9399,
+  "selected_phase": "phase2_finetune"
+}

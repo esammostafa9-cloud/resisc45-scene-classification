@@ -1,0 +1,49 @@
+# --- Data, models and run outputs (never commit) ---
+data/
+runs/
+*.zip
+*.keras
+*.h5
+*.hdf5
+*.ckpt*
+*.tflite
+*.npz
+saved_model/
+
+# --- Private / submission documents ---
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.ipynb
+.ipynb_checkpoints/
+
+# --- Secrets ---
+.env
+.env.*
+*.pem
+*.key
+credentials*.json
+service-account*.json
+kaggle.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

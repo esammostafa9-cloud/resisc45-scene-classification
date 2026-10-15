@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resisc45"
+version = "1.0.0"
+description = "Remote sensing scene classification on NWPU-RESISC45 with a fine-tuned ResNet-50."
+authors = [{ name = "Esam Mustafa Ali Abduljalil Al-Areqi" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "tensorflow>=2.16,<2.21",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "matplotlib",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pillow", "ruff"]
+
+[project.scripts]
+resisc45-train = "resisc45.train:main"
+resisc45-evaluate = "resisc45.evaluate:main"
+resisc45-predict = "resisc45.predict:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: end-to-end tests that train a tiny model"]
+filterwarnings = [
+    "ignore::DeprecationWarning:keras.*",
+    "ignore:`shuffle=True` was passed:UserWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
