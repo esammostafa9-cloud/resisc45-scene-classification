@@ -1,5 +1,8 @@
 {
-  "phase1_best_val_accuracy": 0.8832,
-  "phase2_best_val_accuracy": 0.9399,
-  "selected_phase": "phase2_finetune"
+  "selected_phase": "phase2_finetune",
+  "best_val_accuracy_approx": {
+    "phase1_head": 0.89,
+    "phase2_finetune": 0.94
+  },
+  "note": "Approximate values read from reports/figures/training_curves.png"
 }
