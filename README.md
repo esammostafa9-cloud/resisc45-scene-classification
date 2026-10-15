@@ -18,7 +18,7 @@ Classifies aerial and satellite images into **45 land-use scene categories** usi
 | Test loss | 0.2987 |
 
 <p align="center">
-  <img src="reports/figures/sample_predictions.png" width="520" alt="Test images with their top-5 predicted classes">
+  <img src="reports/figures/top5_confidence.png" width="520" alt="Test images with their top-5 predicted classes">
 </p>
 
 ---
@@ -65,7 +65,7 @@ Input (224×224×3, 0–255)
 | Optimizer / LR | Adam, 1e-3 | Adam, 1e-5 |
 | LR schedule | ReduceLROnPlateau ×0.5, patience 2 | ReduceLROnPlateau ×0.3, patience 2 |
 | Epoch budget | 25 (early stopping, patience 5) | 15 (early stopping, patience 5) |
-| Best val. accuracy | 0.8832 | **0.9399** |
+| Best val. accuracy | ≈ 0.89 | **≈ 0.94** |
 
 The final model is the phase checkpoint with the higher **validation** accuracy (phase 2). All
 hyperparameters live in [`configs/default.yaml`](configs/default.yaml).
@@ -74,12 +74,16 @@ hyperparameters live in [`configs/default.yaml`](configs/default.yaml).
 
 ### Training curves
 
-| Phase 1 (frozen backbone) | Phase 2 (fine-tuning) |
-|---|---|
-| ![Phase 1 curves](reports/figures/training_curves_phase1.png) | ![Phase 2 curves](reports/figures/training_curves_phase2.png) |
+![Training and validation curves for both phases](reports/figures/training_curves.png)
 
-The frozen backbone plateaus around 0.88 validation accuracy. Fine-tuning `conv4`/`conv5` lifts it
-to 0.94 while the train–validation gap stays narrow.
+**Phase 1 (top).** With the backbone frozen, validation accuracy climbs steadily and levels off around
+0.89. It stays *above* training accuracy throughout, because dropout and augmentation make training
+batches harder than the clean validation images.
+
+**Phase 2 (bottom).** Fine-tuning `conv4`/`conv5` lifts validation accuracy from about 0.90 to 0.94,
+peaking at epoch 13. Training accuracy keeps rising to about 0.97, so a gap opens, but validation
+loss bottoms out at about the same point. The checkpoint from that best validation epoch is the
+model that gets kept.
 
 ### Per-class performance
 
