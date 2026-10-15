@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+# Least privilege: the jobs only need to read the code.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
