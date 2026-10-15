@@ -1,0 +1,8 @@
+# Versions the project is tested with (Python 3.11).
+tensorflow==2.20.0
+keras==3.15.1
+numpy==2.4.6
+pandas==3.0.6
+scikit-learn==1.9.1
+matplotlib==3.11.2
+PyYAML==6.0.3
