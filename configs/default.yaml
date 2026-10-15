@@ -1,4 +1,5 @@
-# Default configuration. Reproduces the reported result (94.6% test accuracy).
+# Default configuration used for the published model (94.4% test accuracy).
+# Training runs with these settings have scored 94.4-94.6%: GPU runs vary slightly.
 # Any key can be overridden by copying this file and passing --config.
 
 seed: 42

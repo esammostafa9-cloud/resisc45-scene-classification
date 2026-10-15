@@ -19,8 +19,8 @@ GITHUB_URL = "https://github.com/esammostafa9-cloud/resisc45-scene-classificatio
 UNSURE_THRESHOLD = 0.5
 
 METRICS = {
-    "Test accuracy": "94.6%",
-    "Macro F1": "0.946",
+    "Test accuracy": "94.4%",
+    "Macro F1": "0.944",
     "Classes": "45",
     "Test images": "4,725",
 }
@@ -122,7 +122,7 @@ def build_demo(classifier: Classifier) -> gr.Blocks:
                     gr.Examples(examples=examples, inputs=image, label="Try an example")
             with gr.Column(scale=4):
                 card = gr.HTML(EMPTY_CARD, padding=False)
-                scores = gr.Label(num_top_classes=5, label="Top-5 predictions")
+                scores = gr.Label(num_top_classes=5, label="Top-5 predictions", show_heading=False)
 
         with gr.Accordion("About this model", open=False):
             gr.Markdown(

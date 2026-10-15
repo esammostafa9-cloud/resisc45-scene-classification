@@ -17,7 +17,7 @@ short_description: Classify satellite images into 45 land-use scenes
 Upload an aerial or satellite image and the model predicts which of 45 land-use scene
 categories it shows (airport, harbor, farmland, residential areas, and more).
 
-- **Model:** ResNet-50 fine-tuned on NWPU-RESISC45, with 94.6% test accuracy
+- **Model:** ResNet-50 fine-tuned on NWPU-RESISC45, with 94.4% test accuracy
 - **Code, training and evaluation:** https://github.com/esammostafa9-cloud/resisc45-scene-classification
 
 The example images come from the held-out test split of NWPU-RESISC45 (Cheng et al., 2017).
