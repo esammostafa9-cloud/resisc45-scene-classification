@@ -9,13 +9,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import keras
-import numpy as np
 import pandas as pd
-import tensorflow as tf
 
-from .data import IMAGE_EXTS, load_image
-from .utils import load_json
+from .data import IMAGE_EXTS
+from .inference import Classifier
+
+BATCH_SIZE = 32
 
 
 def collect_images(inputs: list[Path]) -> list[Path]:
@@ -31,25 +30,18 @@ def collect_images(inputs: list[Path]) -> list[Path]:
     return images
 
 
-def predict(
-    model: keras.Model, images: list[Path], class_names: list[str], top_k: int = 3
-) -> pd.DataFrame:
-    img_size = model.input_shape[1]
-    ds = (
-        tf.data.Dataset.from_tensor_slices([str(p) for p in images])
-        .map(lambda p: load_image(p, img_size), num_parallel_calls=tf.data.AUTOTUNE)
-        .batch(32)
-    )
-    probs = model.predict(ds, verbose=0)
-
+def predict(classifier: Classifier, images: list[Path], top_k: int = 3) -> pd.DataFrame:
     rows = []
-    for path, prob in zip(images, probs, strict=True):
-        top = np.argsort(prob)[::-1][:top_k]
-        row = {"image": str(path)}
-        for rank, idx in enumerate(top, start=1):
-            row[f"top{rank}"] = class_names[idx]
-            row[f"top{rank}_prob"] = round(float(prob[idx]), 4)
-        rows.append(row)
+    for start in range(0, len(images), BATCH_SIZE):
+        chunk = images[start : start + BATCH_SIZE]
+        probs = classifier.predict_proba([p.read_bytes() for p in chunk])
+        for path, prob in zip(chunk, probs, strict=True):
+            pred = classifier.to_prediction(prob, top_k)
+            row = {"image": str(path)}
+            for rank, (label, p) in enumerate(pred.top_k, start=1):
+                row[f"top{rank}"] = label
+                row[f"top{rank}_prob"] = round(p, 4)
+            rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -66,13 +58,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--output", type=Path, help="Optional CSV file for the predictions")
     args = parser.parse_args(argv)
 
-    class_names = load_json(args.class_names or args.model.parent / "class_names.json")
-    model = keras.models.load_model(args.model)
     images = collect_images(args.inputs)
     if not images:
         parser.error("no images found")
+    classifier = Classifier.from_path(args.model, args.class_names)
 
-    results = predict(model, images, class_names, args.top_k)
+    results = predict(classifier, images, args.top_k)
     print(results.to_string(index=False))
     if args.output:
         results.to_csv(args.output, index=False)

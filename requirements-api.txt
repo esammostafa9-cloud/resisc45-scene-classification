@@ -1,0 +1,5 @@
+# Extra dependencies for the REST API and model download (on top of requirements.txt).
+fastapi==0.143.2
+uvicorn==0.54.0
+python-multipart==0.0.32
+huggingface_hub==1.33.0
