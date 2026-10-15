@@ -11,14 +11,14 @@ Classifies aerial and satellite images into **45 land-use scene categories** usi
 
 | Metric (held-out test set, 4,725 images) | Score |
 |---|---|
-| **Accuracy** | **94.60%** |
-| Macro precision | 0.9469 |
-| Macro recall | 0.9460 |
-| Macro F1 | 0.9460 |
-| Test loss | 0.2879 |
+| **Accuracy** | **94.41%** |
+| Macro precision | 0.9453 |
+| Macro recall | 0.9441 |
+| Macro F1 | 0.9440 |
+| Test loss | 0.2987 |
 
 <p align="center">
-  <img src="reports/figures/top5_confidence.png" width="520" alt="Test images with their top-5 predicted classes">
+  <img src="reports/figures/sample_predictions.png" width="520" alt="Test images with their top-5 predicted classes">
 </p>
 
 ---
@@ -87,20 +87,23 @@ Full table: [`results/classification_report.csv`](results/classification_report.
 
 | Strongest classes (F1) | | Weakest classes (F1) | |
 |---|---|---|---|
-| chaparral | 0.995 | palace | 0.796 |
-| ship | 0.991 | medium_residential | 0.845 |
-| snowberg | 0.991 | church | 0.857 |
-| harbor | 0.990 | commercial_area | 0.894 |
-| ground_track_field | 0.990 | railway | 0.897 |
+| chaparral | 0.995 | palace | 0.774 |
+| ship | 0.995 | church | 0.848 |
+| snowberg | 0.991 | medium_residential | 0.867 |
+| harbor | 0.986 | railway_station | 0.875 |
+| circular_farmland | 0.986 | commercial_area | 0.892 |
 
 Errors are concentrated in classes that genuinely look alike from above. The weakest classes
 are confused with each other:
 
 ![Confusion matrix of the 10 weakest classes](reports/figures/confusion_matrix_worst10.png)
 
-- **palace ↔ church**: 15 palaces were predicted as church (both are large ornate buildings).
+- **palace ↔ church**: 14 palaces were predicted as church and 8 churches as palace (both are
+  large ornate buildings). This is the single biggest source of error.
+- **railway ↔ railway_station**: 7 + 5 swaps, both being linear rail scenes.
 - **dense ↔ medium residential**: housing density shades gradually from one class to the other.
-- **railway ↔ railway_station**: both are linear rail scenes.
+
+Overall, 264 of the 4,725 test images are misclassified.
 
 The full 45×45 matrix and the 10 best classes are in [`reports/figures/`](reports/figures).
 
