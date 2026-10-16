@@ -1,174 +1,90 @@
-# Remote Sensing Scene Classification (NWPU-RESISC45)
+<div align="center">
 
-[![tests](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml)
-![Python](https://img.shields.io/badge/python-3.10%E2%80%933.12-blue)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+# 🛰️ Aerial Scene Classification
 
-Classifies aerial and satellite images into **45 land-use scene categories** using a
-**ResNet-50** pretrained on ImageNet, adapted with two-phase transfer learning
-(head training → fine-tuning of the top residual stages).
+**Classify satellite and aerial images into 45 land-use scenes with a fine-tuned ResNet-50**
 
-| Metric (held-out test set, 4,725 images) | Score |
-|---|---|
-| **Accuracy** | **94.41%** |
-| Macro precision | 0.9453 |
-| Macro recall | 0.9441 |
-| Macro F1 | 0.9440 |
-| Test loss | 0.2987 |
+[![tests](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml) ![Python](https://img.shields.io/badge/Python-3.10%E2%80%933.12-3776AB?logo=python&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-FF6F00?logo=tensorflow&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-009688?logo=fastapi&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green)
 
-<p align="center">
-  <img src="reports/figures/top5_confidence.png" width="520" alt="Test images with their top-5 predicted classes">
-</p>
+[Results](#-results) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Serving](#-serving-and-deployment) · [Project structure](#-project-structure)
 
----
+<img src="reports/figures/example_predictions.png" width="860" alt="Model predictions on eight held-out test images">
 
-## Contents
+</div>
 
-- [Approach](#approach)
-- [Results](#results)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Serving and deployment](#serving-and-deployment)
-- [Reproducibility](#reproducibility)
-- [Author](#author)
-- [Dataset and citation](#dataset-and-citation)
+## ✨ Highlights
 
-## Approach
+- **94.4% test accuracy** on NWPU-RESISC45 (45 classes, 4,725 held-out test images)
+- **Two-phase transfer learning:** head training on a frozen ResNet-50, then fine-tuning of `conv4`/`conv5`
+- **Reproducible:** one YAML config, a fixed seed, and the exact data split saved with every run
+- **Production-ready serving:** a Gradio demo, a FastAPI REST service and a Docker image, all sharing
+  the same inference code
+- **Tested:** 26 tests covering data, model, CLIs, API and demo, plus lint and a Docker build in CI
 
-**Data.** NWPU-RESISC45 has 31,500 RGB images (256×256), 700 per class, 45 classes. The
-pipeline verifies the dataset is complete before training, then makes a **stratified
-70 / 15 / 15 split** (22,050 / 4,725 / 4,725). The test split is used exactly once, at the end.
+## 📊 Results
 
-**Input pipeline.** Images are decoded and resized to 224×224 with `tf.data`, kept in the raw
-0–255 range. ResNet-50's `preprocess_input` runs *inside* the model, after augmentation, so
-brightness/contrast augmentation works on real pixel values. Training-only augmentation:
-random flips (both axes), rotation (±54°), zoom, translation, contrast and brightness. Overhead
-imagery has no fixed orientation, so these transforms create realistic new views.
+<div align="center">
 
-**Model.**
+| Accuracy | Macro F1 | Macro precision | Macro recall | Test loss |
+|:---:|:---:|:---:|:---:|:---:|
+| **94.41%** | **0.944** | 0.945 | 0.944 | 0.299 |
 
-```
-Input (224×224×3, 0–255)
- → augmentation (training only) → ResNet-50 preprocess_input
- → ResNet-50 backbone (ImageNet weights, BatchNorm in inference mode)
- → GlobalAveragePooling → Dropout 0.3
- → Dense 256 (L2 1e-4) → BatchNorm → ReLU → Dropout 0.2
- → Dense 45, softmax
-```
+</div>
 
-**Two-phase training.**
+| Training curves | Confusion matrix (10 hardest classes) |
+|:---:|:---:|
+| <img src="reports/figures/training_curves.png" width="430" alt="Training and validation curves"> | <img src="reports/figures/confusion_matrix_worst10.png" width="360" alt="Confusion matrix of the 10 weakest classes"> |
 
-| | Phase 1 – head | Phase 2 – fine-tuning |
-|---|---|---|
-| Trainable | classification head only | head + `conv4` + `conv5` (BatchNorm frozen) |
-| Optimizer / LR | Adam, 1e-3 | Adam, 1e-5 |
-| LR schedule | ReduceLROnPlateau ×0.5, patience 2 | ReduceLROnPlateau ×0.3, patience 2 |
-| Epoch budget | 25 (early stopping, patience 5) | 15 (early stopping, patience 5) |
-| Best val. accuracy | ≈ 0.89 | **≈ 0.94** |
+- **Fine-tuning works:** validation accuracy rises from **≈ 0.89** with a frozen backbone to
+  **≈ 0.94** after fine-tuning `conv4`/`conv5`.
+- **Errors come from look-alike scenes:** *palace* ↔ *church* (14 + 8 swaps), *railway* ↔
+  *railway station* (7 + 5), and *dense* ↔ *medium residential*. Overall, 264 of 4,725 test
+  images are misclassified.
 
-The final model is the phase checkpoint with the higher **validation** accuracy (phase 2). All
-hyperparameters live in [`configs/default.yaml`](configs/default.yaml).
+<details>
+<summary><b>Per-class highlights</b></summary>
 
-## Results
+<br>
 
-### Training curves
-
-![Training and validation curves for both phases](reports/figures/training_curves.png)
-
-**Phase 1 (top).** With the backbone frozen, validation accuracy climbs steadily and levels off around
-0.89. It stays *above* training accuracy throughout, because dropout and augmentation make training
-batches harder than the clean validation images.
-
-**Phase 2 (bottom).** Fine-tuning `conv4`/`conv5` lifts validation accuracy from about 0.90 to 0.94,
-peaking at epoch 13. Training accuracy keeps rising to about 0.97, so a gap opens, but validation
-loss bottoms out at about the same point. The checkpoint from that best validation epoch is the
-model that gets kept.
-
-### Per-class performance
-
-Full table: [`results/classification_report.csv`](results/classification_report.csv).
-
-| Strongest classes (F1) | | Weakest classes (F1) | |
-|---|---|---|---|
+| Strongest classes | F1 | Weakest classes | F1 |
+|---|:---:|---|:---:|
 | chaparral | 0.995 | palace | 0.774 |
 | ship | 0.995 | church | 0.848 |
 | snowberg | 0.991 | medium_residential | 0.867 |
 | harbor | 0.986 | railway_station | 0.875 |
 | circular_farmland | 0.986 | commercial_area | 0.892 |
 
-Errors are concentrated in classes that genuinely look alike from above. The weakest classes
-are confused with each other:
+The full per-class table is in [`results/classification_report.csv`](results/classification_report.csv).
+More figures, including the full 45×45 confusion matrix, are in [`reports/figures/`](reports/figures).
 
-![Confusion matrix of the 10 weakest classes](reports/figures/confusion_matrix_worst10.png)
+</details>
 
-- **palace ↔ church**: 14 palaces were predicted as church and 8 churches as palace (both are
-  large ornate buildings). This is the single biggest source of error.
-- **railway ↔ railway_station**: 7 + 5 swaps, both being linear rail scenes.
-- **dense ↔ medium residential**: housing density shades gradually from one class to the other.
-
-Overall, 264 of the 4,725 test images are misclassified.
-
-The full 45×45 matrix and the 10 best classes are in [`reports/figures/`](reports/figures).
-
-## Project structure
-
-```
-├── configs/default.yaml        # all hyperparameters (reproduces the reported result)
-├── src/resisc45/
-│   ├── config.py               # Config dataclass, YAML loading
-│   ├── data.py                 # dataset discovery, verification, split, tf.data pipeline
-│   ├── model.py                # ResNet-50 + head, augmentation, fine-tuning unfreeze
-│   ├── train.py                # two-phase training CLI
-│   ├── evaluate.py             # test metrics, reports, confusion matrices CLI
-│   ├── predict.py              # inference CLI for images / folders
-│   ├── inference.py            # Classifier: load once, predict from paths or bytes
-│   ├── api.py                  # FastAPI REST service
-│   ├── hub.py                  # publish model + demo to the Hugging Face Hub
-│   ├── visualize.py            # plotting helpers
-│   └── utils.py                # seeding, logging, JSON helpers
-├── demo/                       # Gradio app, deployed as a Hugging Face Space
-├── tests/                      # unit, API, demo and end-to-end tests
-├── reports/figures/            # figures from the reported run
-├── results/                    # metrics and per-class report from the reported run
-├── Dockerfile                  # container for the REST API
-└── requirements-api.txt        # extra dependencies for serving
-```
-
-## Getting started
-
-### 1. Install
-
-Requires Python 3.10–3.12. A GPU is strongly recommended for training: the reported run used
-an NVIDIA A100. CPU is fine for inference.
+## 🚀 Quick start
 
 ```bash
 git clone https://github.com/esammostafa9-cloud/resisc45-scene-classification.git
 cd resisc45-scene-classification
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-pip install -e .
+python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -r requirements.txt && pip install -e .
 ```
 
-### 2. Get the dataset
-
-The dataset is **not** included in this repository. Download NWPU-RESISC45 (see
-[Dataset and citation](#dataset-and-citation)) and place it under `data/`. Either layout works:
-
-```
-data/NWPU-RESISC45/airplane/airplane_001.jpg ...   # extracted folder
-data/NWPU.zip                                      # or the archive, extracted on first use
-```
-
-The loader walks the tree to find the folder that holds the 45 class folders, so an extra
-wrapper folder inside the archive is fine.
-
-### 3. Train
+**Classify images** with a trained model:
 
 ```bash
-python -m resisc45.train --data-dir data/NWPU-RESISC45 --config configs/default.yaml
+python -m resisc45.predict --model models/model.keras path/to/image.jpg path/to/folder/
 ```
+
+**Train from scratch.** Put the dataset folder or `NWPU.zip` in `data/` (see
+[Dataset](#-dataset-and-citation)). A GPU is strongly recommended.
+
+```bash
+python -m resisc45.train --data-dir data/NWPU.zip --config configs/default.yaml
+```
+
+<details>
+<summary><b>Training outputs and options</b></summary>
+
+<br>
 
 Each run writes to `runs/<timestamp>/` (or `--output-dir`):
 
@@ -176,125 +92,190 @@ Each run writes to `runs/<timestamp>/` (or `--output-dir`):
 |---|---|
 | `model.keras` | selected model (best validation accuracy) |
 | `phase1_head_best.keras`, `phase2_finetune_best.keras` | per-phase checkpoints |
-| `config.yaml`, `class_names.json`, `split.csv` | everything needed to reproduce / evaluate |
+| `config.yaml`, `class_names.json`, `split.csv` | everything needed to reproduce or evaluate the run |
 | `history_*.csv`, `history.json`, `selection.json` | training logs and model selection |
 | `test_metrics.json`, `classification_report.csv`, `test_predictions.csv` | test results |
-| `figures/` | class distribution, training curves, confusion matrices, sample predictions |
+| `figures/` | training curves, confusion matrices, sample predictions |
 
 Useful flags: `--head-epochs`, `--fine-tune-epochs`, `--batch-size`, `--skip-eval`, and
 `--no-verify` (to train on a subset of the classes).
 
-### 4. Evaluate an existing run
+Re-evaluate a finished run on its saved test split:
 
 ```bash
-python -m resisc45.evaluate --run-dir runs/<timestamp> --data-dir data/NWPU-RESISC45
+python -m resisc45.evaluate --run-dir runs/<timestamp> --data-dir data/NWPU.zip
 ```
 
-### 5. Predict
+</details>
+
+## 🧠 How it works
+
+```mermaid
+flowchart LR
+    A["Aerial image<br/>224×224"] --> B["Augmentation<br/>training only"]
+    B --> C["ResNet-50<br/>ImageNet weights"]
+    C --> D["Head<br/>GAP · Dense 256 · Dropout"]
+    D --> E["Softmax<br/>45 classes"]
+```
+
+- **Data:** 31,500 images, 700 per class, in a stratified **70 / 15 / 15** split. The dataset is
+  verified before training, and the test split is used only once, at the end.
+- **Augmentation:** flips, rotations, zoom, shifts, plus contrast and brightness changes. Overhead
+  imagery has no fixed orientation, so these transforms create realistic new views.
+- **Preprocessing inside the model:** ResNet-50's `preprocess_input` runs after augmentation, so
+  the saved model accepts raw 0–255 images directly.
+- **Head:** global average pooling → Dropout 0.3 → Dense 256 (L2 1e-4) → BatchNorm → ReLU →
+  Dropout 0.2 → softmax.
+
+| | Phase 1: train the head | Phase 2: fine-tune |
+|---|---|---|
+| Trainable | classification head only | head + `conv4` + `conv5` (BatchNorm frozen) |
+| Optimizer | Adam, 1e-3 | Adam, 1e-5 |
+| LR schedule | ReduceLROnPlateau ×0.5 | ReduceLROnPlateau ×0.3 |
+| Epochs | up to 25, early stopping | up to 15, early stopping |
+| Best val. accuracy | ≈ 0.89 | **≈ 0.94** |
+
+The final model is the phase with the higher **validation** accuracy. All hyperparameters live in
+[`configs/default.yaml`](configs/default.yaml).
+
+## 🌐 Serving and deployment
+
+```mermaid
+flowchart LR
+    T["train.py"] --> M["model.keras +<br/>class_names.json"]
+    M --> H["Hugging Face Hub<br/>model repo"]
+    H --> S["Gradio demo<br/>(HF Space)"]
+    H --> API["FastAPI service<br/>(Docker)"]
+    M -. local file .-> API
+```
+
+The CLI, API and demo all use the same `Classifier` in
+[`inference.py`](src/resisc45/inference.py), so images are always preprocessed exactly as in
+training. The model is loaded from `RESISC45_MODEL_PATH` if that is set, otherwise from the Hub
+repo in `RESISC45_HUB_REPO`.
+
+<details>
+<summary><b>REST API</b></summary>
+
+<br>
 
 ```bash
-python -m resisc45.predict --model runs/<timestamp>/model.keras path/to/image.jpg path/to/folder/
+pip install -e ".[api]"
+RESISC45_MODEL_PATH=models/model.keras python -m resisc45.api
+curl -F "file=@demo/examples/harbor.jpg" "http://localhost:8000/predict?top_k=3"
 ```
 
-It prints one row per image with the top-k classes and their probabilities (`--top-k`, default
-3). Add `--output predictions.csv` to save the table.
+| Endpoint | Description |
+|---|---|
+| `GET /health` | liveness check |
+| `GET /classes` | the 45 class names |
+| `POST /predict?top_k=5` | image upload → label, confidence and top-k probabilities |
 
-### Tests
+Interactive docs: `http://localhost:8000/docs`. Uploads larger than 10 MB, or files that aren't
+images, are rejected with a clear error.
+
+</details>
+
+<details>
+<summary><b>Docker</b></summary>
+
+<br>
+
+```bash
+docker build -t resisc45-api .
+docker run -p 8000:8000 -v "$(pwd)/models:/models" resisc45-api
+```
+
+The image contains code and dependencies only and runs as a non-root user. Mount a folder with
+`model.keras` and `class_names.json` at `/models`, or download from the Hub with
+`-e RESISC45_MODEL_PATH= -e RESISC45_HUB_REPO=<user>/<repo>`.
+
+</details>
+
+<details>
+<summary><b>Gradio demo and Hugging Face Hub</b></summary>
+
+<br>
+
+Run the demo locally:
+
+```bash
+pip install -e ".[demo]"
+RESISC45_MODEL_PATH=models/model.keras python demo/app.py     # http://localhost:7860
+```
+
+Publish the model, then deploy the demo as a Space:
+
+```bash
+hf auth login
+python -m resisc45.hub model --model models/model.keras --repo <hf-user>/resisc45-resnet50
+python -m resisc45.hub space --repo <hf-user>/aerial-scene-classifier --model-repo <hf-user>/resisc45-resnet50
+```
+
+The first command checks that the model and class names match, then uploads them with a model
+card built from [`results/test_metrics.json`](results/test_metrics.json).
+
+</details>
+
+## 📁 Project structure
+
+<details>
+<summary><b>Show the file tree</b></summary>
+
+<br>
+
+```
+├── configs/default.yaml     # all hyperparameters
+├── src/resisc45/
+│   ├── data.py              # dataset discovery, verification, split, tf.data pipeline
+│   ├── model.py             # ResNet-50 + head, augmentation, fine-tuning
+│   ├── train.py             # two-phase training CLI
+│   ├── evaluate.py          # metrics, reports, confusion matrices
+│   ├── predict.py           # batch inference CLI
+│   ├── inference.py         # shared Classifier used by the CLI, API and demo
+│   ├── api.py               # FastAPI REST service
+│   ├── hub.py               # publish to the Hugging Face Hub
+│   ├── visualize.py         # plotting helpers
+│   ├── config.py, utils.py
+├── demo/                    # Gradio app (Hugging Face Space)
+├── tests/                   # 26 tests: data, model, CLIs, API, demo, Hub upload
+├── reports/figures/         # figures from the published model
+├── results/                 # metrics and per-class report
+└── Dockerfile               # REST API image
+```
+
+</details>
+
+## 🧪 Testing
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-The tests build a tiny synthetic dataset and a small untrained model, so they need neither the
-real data, the ImageNet weights nor network access. They cover the data pipeline, model, the
-train → evaluate → predict CLIs, the REST API, the Gradio demo and the Hub upload.
+The tests use a tiny synthetic dataset and a small untrained model, so they need no real data, no
+pretrained weights and no network access. CI also runs `ruff` and builds the Docker image on every
+push.
 
-## Serving and deployment
+**Reproducibility.** A single seed (`seed: 42`) controls Python, NumPy, TensorFlow and the split,
+and each run saves its exact split to `split.csv`. GPU kernels aren't fully deterministic, so
+re-runs can differ by a few tenths of a percent; runs with the default config have scored 94.4–94.6%.
 
-```
- train.py ──► model.keras + class_names.json ──► Hugging Face Hub (model repo)
-                                                     │
-                         ┌───────────────────────────┴──────────────────────────┐
-                         ▼                                                      ▼
-            Gradio demo (Hugging Face Space)                  FastAPI service (Docker)
-```
+## 📚 Dataset and citation
 
-Every entry point (CLI, API, demo) uses the same `Classifier` in
-[`inference.py`](src/resisc45/inference.py), so images are always preprocessed exactly as in
-training. The model is loaded from `RESISC45_MODEL_PATH` if that is set, otherwise from the Hub
-repo in `RESISC45_HUB_REPO`.
+NWPU-RESISC45 was created by Northwestern Polytechnical University. It is available through the
+authors and from [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/resisc45). It
+is **not** included in this repository.
 
-### Gradio demo
+> G. Cheng, J. Han and X. Lu, "Remote Sensing Image Scene Classification: Benchmark and State of
+> the Art," *Proceedings of the IEEE*, vol. 105, no. 10, pp. 1865–1883, 2017.
+> [doi:10.1109/JPROC.2017.2675998](https://doi.org/10.1109/JPROC.2017.2675998)
 
-```bash
-pip install -e ".[demo]"
-RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py   # http://localhost:7860
-```
+Dataset images shown in this repository are for illustration only and remain subject to the
+dataset's terms.
 
-### REST API
-
-```bash
-pip install -e ".[api]"
-RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python -m resisc45.api
-curl -F "file=@demo/examples/harbor.jpg" "http://localhost:8000/predict?top_k=3"
-```
-
-Interactive docs are at `http://localhost:8000/docs`.
-
-| Endpoint | Description |
-|---|---|
-| `GET /health` | liveness check |
-| `GET /classes` | the 45 class names |
-| `POST /predict?top_k=5` | multipart image upload → label, confidence, top-k probabilities |
-
-### Docker
-
-```bash
-docker build -t resisc45-api .
-docker run -p 8000:8000 -v "$(pwd)/runs/<timestamp>:/models" resisc45-api
-```
-
-The image holds code and dependencies only. The model is mounted at `/models`, or downloaded from
-the Hub when you pass `-e RESISC45_MODEL_PATH= -e RESISC45_HUB_REPO=<user>/<repo>`.
-
-### Publish to the Hugging Face Hub
-
-```bash
-hf auth login
-python -m resisc45.hub model --model runs/<timestamp>/model.keras --repo <hf-user>/resisc45-resnet50
-python -m resisc45.hub space --repo <hf-user>/aerial-scene-classifier --model-repo <hf-user>/resisc45-resnet50
-```
-
-The first command checks that the model and class names match, then uploads them with a model card
-built from [`results/test_metrics.json`](results/test_metrics.json). The second deploys
-[`demo/`](demo) as a Gradio Space, which installs this package from GitHub and loads the model
-from the Hub.
-
-## Reproducibility
-
-- A single seed (`seed: 42`) controls Python, NumPy and TensorFlow, and the stratified split.
-- The exact split is saved to `split.csv` in every run, and evaluation reuses it.
-- GPU kernels are not fully deterministic, so re-runs can differ from the reported numbers
-  by a few tenths of a percent.
-
-## Author
+## 👤 Author
 
 **esammostafa9-cloud** · [@esammostafa9-cloud](https://github.com/esammostafa9-cloud)
 
-## Dataset and citation
-
-NWPU-RESISC45 was created by Northwestern Polytechnical University. It is available through the
-authors and from [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/resisc45),
-which links to the download. Please cite the original paper if you use it:
-
-> G. Cheng, J. Han and X. Lu, "Remote Sensing Image Scene Classification: Benchmark and State
-> of the Art," *Proceedings of the IEEE*, vol. 105, no. 10, pp. 1865–1883, 2017.
-> doi:10.1109/JPROC.2017.2675998
-
-The dataset images in `reports/figures/` are shown for illustration only and remain subject to
-the dataset's own terms.
-
-## License
-
-Code is released under the [MIT License](LICENSE).
+Code released under the [MIT License](LICENSE).
