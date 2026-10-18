@@ -11,7 +11,7 @@ models/
 *.npz
 saved_model/
 
-# --- Private / submission documents ---
+# --- Documents and notebooks ---
 *.pdf
 *.docx
 *.doc
