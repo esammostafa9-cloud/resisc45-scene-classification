@@ -21,8 +21,9 @@ illustrate the model's output. They remain the property of their rights holders,
 non-commercial research and educational illustration only, and are **not** covered by this
 repository's MIT License.
 
-If you hold rights to any of these images and want them removed, please open an issue or use the
-contact in [SECURITY.md](SECURITY.md), and they will be removed promptly.
+If you hold rights to any of these images and want them removed, please
+[open an issue](https://github.com/esammostafa9-cloud/resisc45-scene-classification/issues/new)
+on this repository, and they will be removed promptly.
 
 ## Pretrained weights
 
