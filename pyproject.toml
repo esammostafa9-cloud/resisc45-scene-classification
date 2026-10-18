@@ -11,7 +11,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "tensorflow>=2.16,<2.21",
+    "tensorflow>=2.16,<2.22",
     "numpy",
     "pandas",
     "scikit-learn",
@@ -21,7 +21,7 @@ dependencies = [
 
 [project.optional-dependencies]
 api = ["fastapi", "uvicorn", "python-multipart", "huggingface_hub"]
-demo = ["gradio>=5,<6", "huggingface_hub"]
+demo = ["gradio>=5,<7", "huggingface_hub"]
 dev = ["pytest", "pillow", "ruff", "httpx", "resisc45[api,demo]"]
 
 [project.scripts]
