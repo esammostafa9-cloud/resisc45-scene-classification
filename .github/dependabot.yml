@@ -12,7 +12,7 @@ updates:
       python-dependencies:
         patterns: ["*"]
     ignore:
-      # The model was trained and tested with TensorFlow 2.20 / Keras 3.
+      # The project runs on TensorFlow 2.21 / Keras 3 (the published results were trained on 2.20).
       # Major upgrades can break loading .keras files, so they are done by hand.
       - dependency-name: tensorflow
         update-types: ["version-update:semver-major"]
