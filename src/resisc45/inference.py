@@ -17,8 +17,6 @@ import tensorflow as tf
 
 from .utils import load_json
 
-DEFAULT_HUB_REPO = os.environ.get("RESISC45_HUB_REPO", "esammostafa9-cloud/resisc45-resnet50")
-
 
 @dataclass
 class Prediction:
@@ -53,19 +51,14 @@ class Classifier:
         return cls(keras.models.load_model(model_path), names)
 
     @classmethod
-    def from_hub(cls, repo_id: str = DEFAULT_HUB_REPO, revision: str | None = None):
-        """Download ``model.keras`` and ``class_names.json`` from a Hugging Face model repo."""
-        from huggingface_hub import hf_hub_download
-
-        model_path = hf_hub_download(repo_id, "model.keras", revision=revision)
-        names_path = hf_hub_download(repo_id, "class_names.json", revision=revision)
-        return cls.from_path(model_path, names_path)
-
-    @classmethod
     def from_env(cls):
-        """``RESISC45_MODEL_PATH`` if set (local file), otherwise the Hugging Face Hub repo."""
-        local = os.environ.get("RESISC45_MODEL_PATH")
-        return cls.from_path(local) if local else cls.from_hub()
+        """Load the model named by the ``RESISC45_MODEL_PATH`` environment variable."""
+        path = os.environ.get("RESISC45_MODEL_PATH")
+        if not path:
+            raise RuntimeError(
+                "Set RESISC45_MODEL_PATH to a trained model, e.g. runs/<timestamp>/model.keras"
+            )
+        return cls.from_path(path)
 
     def _decode(self, data: bytes | tf.Tensor) -> tf.Tensor:
         image = tf.io.decode_image(data, channels=3, expand_animations=False)

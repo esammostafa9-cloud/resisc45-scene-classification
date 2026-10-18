@@ -19,7 +19,7 @@ then the top two residual stages (`conv4`, `conv5`) at a low learning rate. It r
 accuracy** on the 4,725-image test split.
 
 The repo also has command-line tools for training, evaluation and prediction, a Gradio demo, a
-small FastAPI service and a Dockerfile. All of them use the same inference code. There are 26
+small FastAPI service and a Dockerfile. All of them use the same inference code. There are 25
 tests, and CI runs them along with `ruff` and a Docker build on every push.
 
 ## Results
@@ -206,8 +206,7 @@ pip install -e ".[demo]"
 RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py
 ```
 
-The `demo/` folder is also set up to run as a Hugging Face Space, and `src/resisc45/hub.py` can
-publish the model and the demo there.
+This starts the app shown in the GIF at the top, with the 8 example images built in.
 
 </details>
 
@@ -228,11 +227,10 @@ publish the model and the demo there.
 │   ├── predict.py           # batch prediction CLI
 │   ├── inference.py         # Classifier shared by the CLI, API and demo
 │   ├── api.py               # FastAPI service
-│   ├── hub.py               # Hugging Face Hub publishing
 │   ├── visualize.py         # plotting
 │   ├── config.py, utils.py
 ├── demo/                    # Gradio app and example images
-├── tests/                   # data, model, CLI, API, demo and Hub upload tests
+├── tests/                   # data, model, CLI, API and demo tests
 ├── reports/figures/         # figures for the results above
 ├── results/                 # metrics and per-class report
 └── Dockerfile               # API image

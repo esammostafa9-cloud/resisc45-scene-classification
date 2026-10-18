@@ -4,7 +4,7 @@
 #   docker run -p 8000:8000 -v "$PWD/models:/models" resisc45-api
 #
 # The model is not baked into the image. Mount a folder with model.keras + class_names.json
-# at /models, or leave RESISC45_MODEL_PATH unset to download from the Hugging Face Hub.
+# at /models.
 
 FROM python:3.11-slim
 

@@ -9,7 +9,6 @@ demo
 tests
 reports
 results
-scripts
 **/__pycache__
 **/*.egg-info
 .pytest_cache

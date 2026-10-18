@@ -23,5 +23,4 @@ The parts of this project that process untrusted input are:
 - the Gradio demo (`demo/app.py`)
 - dataset archive extraction (`src/resisc45/data.py`)
 
-This project stores no credentials. The Hugging Face token used for publishing lives in the
-user's own Hugging Face cache (`hf auth login`), outside the repository.
+This project uses no credentials, API keys or tokens.

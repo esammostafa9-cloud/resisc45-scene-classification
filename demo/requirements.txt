@@ -1,5 +1,0 @@
-# Hugging Face Space dependencies. The model code is installed straight from GitHub,
-# so the Space always runs the same code as the repository.
-resisc45 @ git+https://github.com/esammostafa9-cloud/resisc45-scene-classification.git
-gradio>=5.0,<6
-huggingface_hub>=0.25

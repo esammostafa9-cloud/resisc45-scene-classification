@@ -1,4 +1,4 @@
-"""Inference, REST API, Gradio demo and Hub upload, using a small untrained model."""
+"""Inference, REST API and Gradio demo, using a small untrained model."""
 
 import importlib.util
 import io
@@ -10,7 +10,6 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from resisc45 import hub
 from resisc45.api import create_app
 from resisc45.config import Config
 from resisc45.inference import Classifier
@@ -66,9 +65,15 @@ def test_class_name_mismatch_is_rejected(classifier):
         Classifier(classifier.model, CLASSES + ["extra"])
 
 
-def test_from_env_prefers_local_model(model_dir, monkeypatch):
+def test_from_env_loads_model_path(model_dir, monkeypatch):
     monkeypatch.setenv("RESISC45_MODEL_PATH", str(model_dir / "model.keras"))
     assert Classifier.from_env().class_names == CLASSES
+
+
+def test_from_env_requires_model_path(monkeypatch):
+    monkeypatch.delenv("RESISC45_MODEL_PATH", raising=False)
+    with pytest.raises(RuntimeError, match="RESISC45_MODEL_PATH"):
+        Classifier.from_env()
 
 
 # --- REST API ---------------------------------------------------------------------------
@@ -131,44 +136,3 @@ def test_result_card_flags_low_confidence():
     assert "unsure" not in demo_app.result_card("harbor", 0.97, "ship")
     unsure = demo_app.result_card("palace", 0.41, "church")
     assert "unsure" in unsure and "Church" in unsure
-
-
-# --- Hugging Face Hub upload (no network) -----------------------------------------------
-
-
-class FakeHfApi:
-    calls: list = []
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __getattr__(self, name):
-        def record(*args, **kwargs):
-            FakeHfApi.calls.append((name, args, kwargs))
-
-        return record
-
-
-def test_push_model_uploads_model_names_and_card(model_dir, monkeypatch):
-    import huggingface_hub
-
-    FakeHfApi.calls = []
-    monkeypatch.setattr(huggingface_hub, "HfApi", FakeHfApi)
-    hub.push_model(
-        model_dir / "model.keras",
-        "user/repo",
-        None,
-        REPO_ROOT / "results" / "test_metrics.json",
-        private=False,
-    )
-
-    uploaded = {kw["path_in_repo"] for name, _, kw in FakeHfApi.calls if name == "upload_file"}
-    assert uploaded == {"model.keras", "class_names.json", "README.md"}
-
-
-def test_model_card_includes_real_metrics():
-    rows = hub._metrics_rows(REPO_ROOT / "results" / "test_metrics.json")
-    assert "| Accuracy | 0.9441 |" in rows
-    card = hub.MODEL_CARD.format(github="g", repo="r", metrics_rows=rows)
-    assert card.startswith("---\nlicense: other")
-    assert "non-commercial research" in card
