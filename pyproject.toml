@@ -20,8 +20,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-api = ["fastapi", "uvicorn", "python-multipart", "huggingface_hub"]
-demo = ["gradio>=5,<6", "huggingface_hub"]
+api = ["fastapi", "uvicorn", "python-multipart"]
+demo = ["gradio>=5,<6"]
 dev = ["pytest", "pillow", "ruff", "httpx", "resisc45[api,demo]"]
 
 [project.scripts]
@@ -29,7 +29,6 @@ resisc45-train = "resisc45.train:main"
 resisc45-evaluate = "resisc45.evaluate:main"
 resisc45-predict = "resisc45.predict:main"
 resisc45-api = "resisc45.api:main"
-resisc45-push-to-hub = "resisc45.hub:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

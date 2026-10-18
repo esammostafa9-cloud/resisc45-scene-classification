@@ -12,22 +12,12 @@ updates:
       python-dependencies:
         patterns: ["*"]
     ignore:
-      # The published model was trained and tested with TensorFlow 2.20 / Keras 3.
+      # The model was trained and tested with TensorFlow 2.20 / Keras 3.
       # Major upgrades can break loading .keras files, so they are done by hand.
       - dependency-name: tensorflow
         update-types: ["version-update:semver-major"]
       - dependency-name: keras
         update-types: ["version-update:semver-major"]
-
-  # Hugging Face Space dependencies
-  - package-ecosystem: pip
-    directory: /demo
-    schedule:
-      interval: monthly
-    groups:
-      demo-dependencies:
-        patterns: ["*"]
-    ignore:
       # Gradio 6 removes APIs the demo uses; upgrade deliberately.
       - dependency-name: gradio
         update-types: ["version-update:semver-major"]

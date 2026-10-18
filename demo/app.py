@@ -1,9 +1,7 @@
 """Gradio demo: classify an aerial / satellite image into one of 45 scene categories.
 
-Runs as a Hugging Face Space, or locally:
+Usage:
     RESISC45_MODEL_PATH=runs/<run>/model.keras python demo/app.py
-Without RESISC45_MODEL_PATH the model is downloaded from the Hugging Face Hub
-(repo set by RESISC45_HUB_REPO).
 """
 
 from __future__ import annotations
