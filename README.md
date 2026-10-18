@@ -8,7 +8,9 @@
 
 [Results](#-results) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Serving](#-serving-and-deployment) · [Project structure](#-project-structure)
 
-<img src="reports/figures/example_predictions.png" width="860" alt="Model predictions on eight held-out test images">
+<img src="reports/figures/demo.gif" width="800" alt="Demo: picking example aerial images in the Gradio app and getting the predicted scene with confidence and top-5 classes">
+
+<sub>The Gradio demo running locally with the trained model, classifying held-out test images.</sub>
 
 </div>
 
@@ -30,6 +32,10 @@
 | **94.41%** | **0.944** | 0.945 | 0.944 | 0.299 |
 
 </div>
+
+<p align="center">
+  <img src="reports/figures/example_predictions.png" width="760" alt="Model predictions on eight held-out test images">
+</p>
 
 | Training curves | Confusion matrix (10 hardest classes) |
 |:---:|:---:|
