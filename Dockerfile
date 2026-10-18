@@ -18,7 +18,8 @@ WORKDIR /app
 
 # Dependencies first, so code changes don't invalidate the (large) TensorFlow layer.
 COPY requirements.txt requirements-api.txt ./
-RUN pip install -r requirements.txt -r requirements-api.txt
+RUN pip install --upgrade pip setuptools wheel \
+ && pip install -r requirements.txt -r requirements-api.txt
 
 COPY pyproject.toml README.md ./
 COPY src ./src
