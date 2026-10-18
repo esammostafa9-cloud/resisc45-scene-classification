@@ -44,9 +44,5 @@ Installed separately via `pip`; none are bundled here.
 | pandas, scikit-learn | BSD-3-Clause |
 | Matplotlib | Matplotlib license (PSF-based) |
 | Pillow | MIT-CMU |
-| PyYAML, FastAPI, Pydantic | MIT |
-| Uvicorn, Starlette | BSD-3-Clause |
-| Gradio, python-multipart | Apache-2.0 |
-
-The Docker image is based on the official `python:3.11-slim` image (Python Software Foundation
-License, plus Debian package licenses).
+| PyYAML | MIT |
+| Gradio (demo only) | Apache-2.0 |

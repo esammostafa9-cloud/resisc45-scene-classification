@@ -6,7 +6,7 @@ Classifies satellite and aerial images into the 45 land-use classes of NWPU-RESI
 
 [![tests](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml) ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-FF6F00?logo=tensorflow&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green)
 
-[Results](#results) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Serving](#serving) · [Project layout](#project-layout)
+[Results](#results) · [Getting started](#getting-started) · [How it works](#how-it-works) · [Project layout](#project-layout)
 
 <img src="reports/figures/demo.gif" width="640" alt="The Gradio demo classifying example aerial images and showing the predicted scene, confidence and top-5 classes">
 
@@ -18,9 +18,8 @@ An ImageNet-pretrained ResNet-50 is trained in two stages: first only a new clas
 then the top two residual stages (`conv4`, `conv5`) at a low learning rate. It reaches **94.41%
 accuracy** on the 4,725-image test split.
 
-The repo also has command-line tools for training, evaluation and prediction, a Gradio demo, a
-small FastAPI service and a Dockerfile. All of them use the same inference code. There are 25
-tests, and CI runs them along with `ruff` and a Docker build on every push.
+The repo has command-line tools for training, evaluation and prediction, plus a Gradio app to try
+the model on your own images.
 
 ## Results
 
@@ -65,55 +64,139 @@ The full 45×45 confusion matrix is in [`reports/figures/confusion_matrix.png`](
 
 </details>
 
-## Quick start
+## Getting started
+
+You need Python 3.11 and about 4 GB of free disk space. Training on a CPU takes many hours, so
+use an NVIDIA GPU if you can. On Windows, TensorFlow can only use the GPU from inside
+[WSL2](https://www.tensorflow.org/install/pip#windows-wsl2).
+
+### 1. Install
 
 ```bash
 git clone https://github.com/esammostafa9-cloud/resisc45-scene-classification.git
 cd resisc45-scene-classification
-python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -r requirements.txt && pip install -e .
+python -m venv .venv
 ```
 
-The trained weights aren't included in this repo. Train a model first (below), then classify
-images with it. `class_names.json` from the training run must sit next to the model file:
+Activate the environment. On Windows:
+
+```powershell
+.venv\Scripts\activate
+```
+
+On macOS or Linux:
 
 ```bash
-python -m resisc45.predict --model runs/<timestamp>/model.keras path/to/image.jpg path/to/folder/
+source .venv/bin/activate
 ```
 
-To train from scratch, put the extracted dataset folder or `NWPU.zip` in `data/` (see
-[Dataset](#dataset)). Use a GPU; on a CPU this takes many hours.
+Then install the dependencies. The `[demo]` part adds Gradio for step 6.
 
 ```bash
-python -m resisc45.train --data-dir data/NWPU.zip --config configs/default.yaml
+pip install -r requirements.txt
+pip install -e ".[demo]"
 ```
 
-<details>
-<summary><b>Training outputs and options</b></summary>
+### 2. Get the dataset
 
-<br>
+The dataset isn't included in this repo. Download NWPU-RESISC45 from the link on the
+[TensorFlow Datasets page](https://www.tensorflow.org/datasets/catalog/resisc45) (about 400 MB),
+then extract it into a `data` folder so the class folders sit directly inside it:
 
-Each run writes to `runs/<timestamp>/`, or to `--output-dir` if you set it:
+```
+data/NWPU-RESISC45/
+├── airplane/
+│   ├── airplane_001.jpg
+│   └── ...
+├── airport/
+└── ... (45 class folders, 700 images each)
+```
+
+The download is a `.rar` file, which you can open with 7-Zip or WinRAR. If you have the dataset
+as a `.zip`, you can also pass the zip file directly in the next steps; it's extracted on first use.
+
+Before training, the code checks that there are exactly 45 classes with 700 images each, and stops
+with an error if anything is missing.
+
+### 3. Train
+
+```bash
+python -m resisc45.train --data-dir data/NWPU-RESISC45
+```
+
+This runs both training stages and then evaluates the best model on the test split. Everything is
+saved to a new folder, `runs/<timestamp>/`:
 
 | File | Contents |
 |---|---|
-| `model.keras` | selected model (best validation accuracy) |
-| `phase1_head_best.keras`, `phase2_finetune_best.keras` | per-phase checkpoints |
-| `config.yaml`, `class_names.json`, `split.csv` | what you need to reproduce or re-evaluate the run |
-| `history_*.csv`, `history.json`, `selection.json` | training logs and model selection |
-| `test_metrics.json`, `classification_report.csv`, `test_predictions.csv` | test results |
+| `model.keras` | the trained model |
+| `class_names.json` | class names, in the order the model outputs them |
+| `test_metrics.json`, `classification_report.csv` | test accuracy, F1 and per-class scores |
 | `figures/` | training curves, confusion matrices, sample predictions |
+| `config.yaml`, `split.csv` | the settings and the exact train/val/test split used |
 
-Other flags: `--head-epochs`, `--fine-tune-epochs`, `--batch-size`, `--skip-eval`, and
-`--no-verify` to train on a subset of the classes.
-
-To re-evaluate a finished run on its saved test split:
+To check your setup quickly before a full run, train one short epoch:
 
 ```bash
-python -m resisc45.evaluate --run-dir runs/<timestamp> --data-dir data/NWPU.zip
+python -m resisc45.train --data-dir data/NWPU-RESISC45 --head-epochs 1 --fine-tune-epochs 0
 ```
 
+<details>
+<summary><b>More training options</b></summary>
+
+<br>
+
+| Option | What it does |
+|---|---|
+| `--output-dir runs/my-run` | save to a folder you choose instead of `runs/<timestamp>/` |
+| `--config my-config.yaml` | use your own copy of [`configs/default.yaml`](configs/default.yaml) |
+| `--head-epochs N`, `--fine-tune-epochs N` | change the epoch budget of each stage |
+| `--batch-size N` | lower this if you run out of GPU memory |
+| `--skip-eval` | don't evaluate on the test split at the end |
+| `--no-verify` | skip the 45 × 700 dataset check, e.g. to train on a subset of the classes |
+
 </details>
+
+### 4. Evaluate
+
+Training already evaluates the model. To re-run the evaluation later, on the same test split:
+
+```bash
+python -m resisc45.evaluate --run-dir runs/<timestamp> --data-dir data/NWPU-RESISC45
+```
+
+Replace `<timestamp>` with the name of your run folder. The metrics, reports and figures in that
+folder are updated.
+
+### 5. Predict on your own images
+
+Pass one or more image files or folders:
+
+```bash
+python -m resisc45.predict --model runs/<timestamp>/model.keras my_image.jpg my_folder/
+```
+
+It prints the top 3 classes and their probabilities for each image. Add `--top-k 5` to see more
+classes, or `--output predictions.csv` to save the results.
+
+### 6. Run the Gradio demo
+
+The demo is the app shown in the GIF at the top. Tell it where your model is, then start it.
+On Windows (PowerShell):
+
+```powershell
+$env:RESISC45_MODEL_PATH = "runs/<timestamp>/model.keras"
+python demo/app.py
+```
+
+On macOS or Linux:
+
+```bash
+RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py
+```
+
+Open the address it prints in your browser. You can upload an image or click one of the 8 built-in
+examples.
 
 ## How it works
 
@@ -125,8 +208,8 @@ flowchart LR
     D --> E["Softmax<br/>45 classes"]
 ```
 
-The dataset has 31,500 images, 700 per class. It's checked for completeness, then split 70/15/15
-with stratification. The test split is only used once, at the end.
+The dataset has 31,500 images, 700 per class, split 70/15/15 with stratification. The test split
+is only used once, at the end.
 
 Training images get random flips, rotations, zoom, shifts, and contrast and brightness changes.
 Aerial images have no "up", so flipped and rotated copies are still realistic.
@@ -146,117 +229,35 @@ model takes raw 0–255 pixels. The head is global average pooling, Dropout 0.3,
 The stage with the higher validation accuracy is kept as the final model. Every hyperparameter is
 in [`configs/default.yaml`](configs/default.yaml).
 
-## Serving
-
-```mermaid
-flowchart LR
-    T["train.py"] --> M["model.keras +<br/>class_names.json"]
-    M --> C["predict.py<br/>CLI"]
-    M --> S["Gradio demo"]
-    M --> API["FastAPI service<br/>(Docker)"]
-```
-
-The CLI, the API and the demo all go through `Classifier` in
-[`inference.py`](src/resisc45/inference.py), so images are preprocessed the same way as in
-training. The API and the demo read the model's location from `RESISC45_MODEL_PATH`.
-
-<details>
-<summary><b>REST API</b></summary>
-
-<br>
-
-```bash
-pip install -e ".[api]"
-RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python -m resisc45.api
-```
-
-| Endpoint | Description |
-|---|---|
-| `GET /health` | liveness check |
-| `GET /classes` | the 45 class names |
-| `POST /predict?top_k=5` | image upload, returns label, confidence and top-k probabilities |
-
-The service listens on port 8000, and interactive docs are served at `/docs`. Files over 10 MB
-and files that aren't images get a 413 or 400 response.
-
-</details>
-
-<details>
-<summary><b>Docker</b></summary>
-
-<br>
-
-```bash
-docker build -t resisc45-api .
-docker run -p 8000:8000 -v "$(pwd)/runs/<timestamp>:/models" resisc45-api
-```
-
-The image holds the code and dependencies, not the model, and runs as a non-root user. Mount the
-training run folder (it has `model.keras` and `class_names.json`) at `/models`.
-
-</details>
-
-<details>
-<summary><b>Gradio demo</b></summary>
-
-<br>
-
-```bash
-pip install -e ".[demo]"
-RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py
-```
-
-This starts the app shown in the GIF at the top, with the 8 example images built in.
-
-</details>
+One seed (`seed: 42`) controls Python, NumPy, TensorFlow and the data split. GPU training isn't
+fully deterministic, so repeated runs can differ by a few tenths of a percent. Runs with the
+default config have scored between 94.4% and 94.6%.
 
 ## Project layout
-
-<details>
-<summary><b>File tree</b></summary>
-
-<br>
 
 ```
 ├── configs/default.yaml     # all hyperparameters
 ├── src/resisc45/
 │   ├── data.py              # finding, checking and splitting the dataset; tf.data pipeline
 │   ├── model.py             # ResNet-50 + head, augmentation, fine-tuning
-│   ├── train.py             # two-stage training CLI
-│   ├── evaluate.py          # metrics, reports, confusion matrices
-│   ├── predict.py           # batch prediction CLI
-│   ├── inference.py         # Classifier shared by the CLI, API and demo
-│   ├── api.py               # FastAPI service
+│   ├── train.py             # step 3: training
+│   ├── evaluate.py          # step 4: evaluation
+│   ├── predict.py           # step 5: prediction
+│   ├── inference.py         # model loading and preprocessing for prediction and the demo
 │   ├── visualize.py         # plotting
 │   ├── config.py, utils.py
-├── demo/                    # Gradio app and example images
-├── tests/                   # data, model, CLI, API and demo tests
+├── demo/                    # step 6: Gradio app and example images
+├── tests/                   # automated tests
 ├── reports/figures/         # figures for the results above
-├── results/                 # metrics and per-class report
-└── Dockerfile               # API image
+└── results/                 # per-class report for the results above
 ```
 
-</details>
-
-## Testing
-
-```bash
-pip install -e ".[dev]"
-pytest
-```
-
-The tests build a tiny synthetic dataset and an untrained model, so they don't need the real
-data, pretrained weights or network access.
-
-One seed (`seed: 42`) controls Python, NumPy, TensorFlow and the data split, and every run saves
-its split to `split.csv`. GPU training isn't fully deterministic, so repeated runs can differ by a
-few tenths of a percent. Runs with the default config have scored between 94.4% and 94.6%.
+To run the tests: `pip install -e ".[dev]"`, then `pytest`. They use a tiny synthetic dataset, so
+they don't need the real data or a GPU.
 
 ## Dataset
 
-NWPU-RESISC45 was created at Northwestern Polytechnical University. You can get it from the
-authors or through [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/resisc45).
-It isn't included here.
+NWPU-RESISC45 was created at Northwestern Polytechnical University.
 
 > G. Cheng, J. Han and X. Lu, "Remote Sensing Image Scene Classification: Benchmark and State of
 > the Art," *Proceedings of the IEEE*, vol. 105, no. 10, pp. 1865–1883, 2017.
@@ -269,8 +270,7 @@ The code is released under the [MIT License](LICENSE) and comes without warranty
 The 8 example images and the figures that show them come from NWPU-RESISC45. They're included
 for research and educational illustration only, are not covered by the MIT License, and will be
 removed on request. Models trained on this dataset should only be used for non-commercial
-research and education. Details
-on the dataset, the pretrained weights and the dependencies are in
+research and education. Details on the dataset, the pretrained weights and the dependencies are in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Author

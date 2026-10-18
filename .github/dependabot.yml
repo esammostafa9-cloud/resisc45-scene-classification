@@ -2,7 +2,7 @@
 # Security fixes are separate: they are opened as soon as a vulnerability is published.
 version: 2
 updates:
-  # requirements.txt, requirements-api.txt and pyproject.toml
+  # requirements.txt and pyproject.toml
   - package-ecosystem: pip
     directory: /
     schedule:
@@ -30,13 +30,3 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
-
-  # Base image in the Dockerfile (python:3.11-slim gets regular security patches)
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: monthly
-    ignore:
-      # Stay on Python 3.11, which the project is tested on.
-      - dependency-name: python
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
