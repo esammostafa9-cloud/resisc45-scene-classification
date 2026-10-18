@@ -20,15 +20,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-api = ["fastapi", "uvicorn", "python-multipart"]
 demo = ["gradio>=5,<6"]
-dev = ["pytest", "pillow", "ruff", "httpx", "resisc45[api,demo]"]
+dev = ["pytest", "pillow", "ruff", "resisc45[demo]"]
 
 [project.scripts]
 resisc45-train = "resisc45.train:main"
 resisc45-evaluate = "resisc45.evaluate:main"
 resisc45-predict = "resisc45.predict:main"
-resisc45-api = "resisc45.api:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

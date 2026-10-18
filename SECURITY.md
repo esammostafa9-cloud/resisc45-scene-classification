@@ -19,8 +19,7 @@ within 7 days.
 
 The parts of this project that process untrusted input are:
 
-- the REST API (`src/resisc45/api.py`), which accepts image uploads
-- the Gradio demo (`demo/app.py`)
+- the Gradio demo (`demo/app.py`), which accepts image uploads
 - dataset archive extraction (`src/resisc45/data.py`)
 
 This project uses no credentials, API keys or tokens.

@@ -1,8 +1,8 @@
 """Load a trained model once and classify images from paths or raw bytes.
 
-Shared by the CLI (``predict.py``), the REST API (``api.py``) and the Gradio demo, so all three
-preprocess images exactly like training: decode, resize to the model's input size, raw 0-255
-pixels. ResNet-50's ``preprocess_input`` is part of the saved model, so it is NOT applied here.
+Shared by the CLI (``predict.py``) and the Gradio demo, so both preprocess images exactly like
+training: decode, resize to the model's input size, raw 0-255 pixels. ResNet-50's
+``preprocess_input`` is part of the saved model, so it is NOT applied here.
 """
 
 from __future__ import annotations

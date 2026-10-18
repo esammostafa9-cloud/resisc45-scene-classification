@@ -1,4 +1,4 @@
-"""Inference, REST API and Gradio demo, using a small untrained model."""
+"""Inference and the Gradio demo, using a small untrained model."""
 
 import importlib.util
 import io
@@ -7,10 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from fastapi.testclient import TestClient
 from PIL import Image
 
-from resisc45.api import create_app
 from resisc45.config import Config
 from resisc45.inference import Classifier
 from resisc45.model import build_model
@@ -74,43 +72,6 @@ def test_from_env_requires_model_path(monkeypatch):
     monkeypatch.delenv("RESISC45_MODEL_PATH", raising=False)
     with pytest.raises(RuntimeError, match="RESISC45_MODEL_PATH"):
         Classifier.from_env()
-
-
-# --- REST API ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="module")
-def client(classifier):
-    with TestClient(create_app(classifier)) as c:
-        yield c
-
-
-def test_health_and_classes(client):
-    assert client.get("/health").json()["status"] == "ok"
-    assert client.get("/classes").json() == CLASSES
-
-
-def test_predict_endpoint(client):
-    r = client.post("/predict?top_k=3", files={"file": ("x.jpg", image_bytes(), "image/jpeg")})
-    assert r.status_code == 200
-    body = r.json()
-    assert body["label"] in CLASSES
-    assert [s["label"] for s in body["top_k"]][0] == body["label"]
-    assert len(body["top_k"]) == 3
-
-
-@pytest.mark.parametrize(
-    "payload, status",
-    [(b"", 400), (b"definitely not an image", 400)],
-)
-def test_predict_rejects_bad_uploads(client, payload, status):
-    r = client.post("/predict", files={"file": ("x.jpg", payload, "image/jpeg")})
-    assert r.status_code == status
-
-
-def test_predict_validates_top_k(client):
-    r = client.post("/predict?top_k=0", files={"file": ("x.jpg", image_bytes(), "image/jpeg")})
-    assert r.status_code == 422
 
 
 # --- Gradio demo -----------------------------------------------------------------------
