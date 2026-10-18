@@ -21,6 +21,9 @@ accuracy** on the 4,725-image test split.
 The repo has command-line tools for training, evaluation and prediction, plus a Gradio app to try
 the model on your own images.
 
+**Tech stack:** Python · TensorFlow / Keras · scikit-learn · NumPy · pandas · Matplotlib · Gradio ·
+pytest · GitHub Actions
+
 ## Results
 
 <div align="center">

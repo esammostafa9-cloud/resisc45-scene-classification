@@ -9,7 +9,7 @@ from resisc45 import evaluate, predict, train
 
 
 @pytest.mark.slow
-def test_train_evaluate_predict(tiny_dataset, tiny_config, tmp_path, capsys):
+def test_train_evaluate_predict(tiny_dataset, tiny_config, tmp_path):
     cfg_path = tmp_path / "tiny.yaml"
     tiny_config.to_yaml(cfg_path)
     run = tmp_path / "run"

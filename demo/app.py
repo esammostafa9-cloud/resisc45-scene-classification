@@ -101,7 +101,7 @@ def build_demo(classifier: Classifier) -> gr.Blocks:
     )
     classes = ", ".join(pretty(c) for c in classifier.class_names)
 
-    with gr.Blocks(title="Aerial Scene Classifier", css=CSS, theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title="Aerial Scene Classifier") as demo:
         gr.HTML(
             '<div id="header"><h1>🛰️ Aerial Scene Classifier</h1>'
             "<p>Identify the land-use scene in a satellite or aerial image — "
@@ -152,4 +152,4 @@ Code: [GitHub]({GITHUB_URL})
 
 
 if __name__ == "__main__":
-    build_demo(Classifier.from_env()).launch()
+    build_demo(Classifier.from_env()).launch(css=CSS, theme=gr.themes.Soft())

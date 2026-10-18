@@ -20,7 +20,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-demo = ["gradio>=5,<6"]
+# Starlette and Pillow are pinned to versions with known vulnerabilities fixed
+# (Starlette PYSEC-2026-161/-248/-249/-2280/-2281, Pillow PYSEC-2026-3454 and others).
+demo = ["gradio>=6.30,<7", "starlette>=1.3.1", "pillow>=12.3"]
 dev = ["pytest", "pillow", "ruff", "resisc45[demo]"]
 
 [project.scripts]
@@ -37,8 +39,6 @@ markers = ["slow: end-to-end tests that train a tiny model"]
 filterwarnings = [
     "ignore::DeprecationWarning:keras.*",
     "ignore:`shuffle=True` was passed:UserWarning",
-    "ignore::DeprecationWarning:gradio.*",
-    "ignore:The '(css|theme)' parameter in the Blocks constructor:DeprecationWarning",
 ]
 
 [tool.ruff]

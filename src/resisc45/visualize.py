@@ -39,12 +39,14 @@ def plot_history(histories: dict[str, dict[str, list[float]]], path: str | Path)
     axes = fig.subplots(1, 2)
 
     # Concatenate the phases so each curve is one continuous line.
-    series = {k: [] for k in ("accuracy", "val_accuracy", "loss", "val_loss")}
-    starts = []  # (first epoch of phase, phase name)
+    series: dict[str, list[float]] = {
+        k: [] for k in ("accuracy", "val_accuracy", "loss", "val_loss")
+    }
+    starts: list[tuple[int, str]] = []  # (first epoch of phase, phase name)
     for name, h in histories.items():
         starts.append((len(series["accuracy"]) + 1, name))
-        for k in series:
-            series[k].extend(h[k])
+        for key, values in series.items():
+            values.extend(h[key])
     epochs = np.arange(1, len(series["accuracy"]) + 1)
 
     for ax, key, title in ((axes[0], "accuracy", "Accuracy"), (axes[1], "loss", "Loss")):

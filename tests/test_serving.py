@@ -60,7 +60,7 @@ def test_top_k_is_clamped_to_number_of_classes(classifier):
 
 def test_class_name_mismatch_is_rejected(classifier):
     with pytest.raises(ValueError, match="outputs"):
-        Classifier(classifier.model, CLASSES + ["extra"])
+        Classifier(classifier.model, [*CLASSES, "extra"])
 
 
 def test_from_env_loads_model_path(model_dir, monkeypatch):
@@ -96,4 +96,5 @@ def test_result_card_flags_low_confidence():
     demo_app = _load_demo_module()
     assert "unsure" not in demo_app.result_card("harbor", 0.97, "ship")
     unsure = demo_app.result_card("palace", 0.41, "church")
-    assert "unsure" in unsure and "Church" in unsure
+    assert "unsure" in unsure
+    assert "Church" in unsure
