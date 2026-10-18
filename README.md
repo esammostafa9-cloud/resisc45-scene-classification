@@ -4,13 +4,13 @@
 
 Classifies satellite and aerial images into the 45 land-use classes of NWPU-RESISC45.
 
-[![tests](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml) ![Python](https://img.shields.io/badge/Python-3.10%E2%80%933.12-3776AB?logo=python&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-FF6F00?logo=tensorflow&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green)
+[![tests](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/esammostafa9-cloud/resisc45-scene-classification/actions/workflows/tests.yml) ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-FF6F00?logo=tensorflow&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-green)
 
 [Results](#results) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Serving](#serving) · [Project layout](#project-layout)
 
 <img src="reports/figures/demo.gif" width="640" alt="The Gradio demo classifying example aerial images and showing the predicted scene, confidence and top-5 classes">
 
-<sub>The Gradio demo running locally with the trained model on held-out test images.</sub>
+<sub>The Gradio demo classifying held-out test images with the trained model.</sub>
 
 </div>
 
@@ -61,7 +61,7 @@ and railway station (7 and 5), and dense and medium residential.
 | circular_farmland | 0.986 | commercial_area | 0.892 |
 
 All 45 classes are in [`results/classification_report.csv`](results/classification_report.csv).
-The full 45×45 confusion matrix is in [`reports/figures/`](reports/figures).
+The full 45×45 confusion matrix is in [`reports/figures/confusion_matrix.png`](reports/figures/confusion_matrix.png).
 
 </details>
 
@@ -74,10 +74,11 @@ python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\a
 pip install -r requirements.txt && pip install -e .
 ```
 
-Classify images with a trained model (`class_names.json` must sit next to the model file):
+The trained weights aren't included in this repo. Train a model first (below), then classify
+images with it. `class_names.json` from the training run must sit next to the model file:
 
 ```bash
-python -m resisc45.predict --model models/model.keras path/to/image.jpg path/to/folder/
+python -m resisc45.predict --model runs/<timestamp>/model.keras path/to/image.jpg path/to/folder/
 ```
 
 To train from scratch, put the extracted dataset folder or `NWPU.zip` in `data/` (see
@@ -150,16 +151,14 @@ in [`configs/default.yaml`](configs/default.yaml).
 ```mermaid
 flowchart LR
     T["train.py"] --> M["model.keras +<br/>class_names.json"]
-    M --> H["Hugging Face Hub<br/>model repo"]
-    H --> S["Gradio demo<br/>(HF Space)"]
-    H --> API["FastAPI service<br/>(Docker)"]
-    M -. local file .-> API
+    M --> C["predict.py<br/>CLI"]
+    M --> S["Gradio demo"]
+    M --> API["FastAPI service<br/>(Docker)"]
 ```
 
 The CLI, the API and the demo all go through `Classifier` in
 [`inference.py`](src/resisc45/inference.py), so images are preprocessed the same way as in
-training. The model is loaded from `RESISC45_MODEL_PATH` if it's set, otherwise from the Hugging
-Face repo named in `RESISC45_HUB_REPO`.
+training. The API and the demo read the model's location from `RESISC45_MODEL_PATH`.
 
 <details>
 <summary><b>REST API</b></summary>
@@ -168,8 +167,7 @@ Face repo named in `RESISC45_HUB_REPO`.
 
 ```bash
 pip install -e ".[api]"
-RESISC45_MODEL_PATH=models/model.keras python -m resisc45.api
-curl -F "file=@demo/examples/harbor.jpg" "http://localhost:8000/predict?top_k=3"
+RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python -m resisc45.api
 ```
 
 | Endpoint | Description |
@@ -178,8 +176,8 @@ curl -F "file=@demo/examples/harbor.jpg" "http://localhost:8000/predict?top_k=3"
 | `GET /classes` | the 45 class names |
 | `POST /predict?top_k=5` | image upload, returns label, confidence and top-k probabilities |
 
-Interactive docs are at `http://localhost:8000/docs`. Files over 10 MB and files that aren't
-images get a 413 or 400 response.
+The service listens on port 8000, and interactive docs are served at `/docs`. Files over 10 MB
+and files that aren't images get a 413 or 400 response.
 
 </details>
 
@@ -190,37 +188,26 @@ images get a 413 or 400 response.
 
 ```bash
 docker build -t resisc45-api .
-docker run -p 8000:8000 -v "$(pwd)/models:/models" resisc45-api
+docker run -p 8000:8000 -v "$(pwd)/runs/<timestamp>:/models" resisc45-api
 ```
 
-The image holds the code and dependencies, not the model, and runs as a non-root user. Mount a
-folder containing `model.keras` and `class_names.json` at `/models`, or pull the model from the
-Hub with `-e RESISC45_MODEL_PATH= -e RESISC45_HUB_REPO=<user>/<repo>`.
+The image holds the code and dependencies, not the model, and runs as a non-root user. Mount the
+training run folder (it has `model.keras` and `class_names.json`) at `/models`.
 
 </details>
 
 <details>
-<summary><b>Gradio demo and Hugging Face Hub</b></summary>
+<summary><b>Gradio demo</b></summary>
 
 <br>
 
-Run the demo locally:
-
 ```bash
 pip install -e ".[demo]"
-RESISC45_MODEL_PATH=models/model.keras python demo/app.py     # http://localhost:7860
+RESISC45_MODEL_PATH=runs/<timestamp>/model.keras python demo/app.py
 ```
 
-Publish the model, then deploy the demo as a Space:
-
-```bash
-hf auth login
-python -m resisc45.hub model --model models/model.keras --repo <hf-user>/resisc45-resnet50
-python -m resisc45.hub space --repo <hf-user>/aerial-scene-classifier --model-repo <hf-user>/resisc45-resnet50
-```
-
-The first command checks that the model and the class names match before uploading them with a
-model card built from [`results/test_metrics.json`](results/test_metrics.json).
+The `demo/` folder is also set up to run as a Hugging Face Space, and `src/resisc45/hub.py` can
+publish the model and the demo there.
 
 </details>
 
@@ -244,9 +231,9 @@ model card built from [`results/test_metrics.json`](results/test_metrics.json).
 │   ├── hub.py               # Hugging Face Hub publishing
 │   ├── visualize.py         # plotting
 │   ├── config.py, utils.py
-├── demo/                    # Gradio app for a Hugging Face Space
+├── demo/                    # Gradio app and example images
 ├── tests/                   # data, model, CLI, API, demo and Hub upload tests
-├── reports/figures/         # figures for the published model
+├── reports/figures/         # figures for the results above
 ├── results/                 # metrics and per-class report
 └── Dockerfile               # API image
 ```
@@ -283,7 +270,8 @@ The code is released under the [MIT License](LICENSE) and comes without warranty
 
 The 8 example images and the figures that show them come from NWPU-RESISC45. They're included
 for research and educational illustration only, are not covered by the MIT License, and will be
-removed on request. The trained model is meant for non-commercial research and education. Details
+removed on request. Models trained on this dataset should only be used for non-commercial
+research and education. Details
 on the dataset, the pretrained weights and the dependencies are in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
