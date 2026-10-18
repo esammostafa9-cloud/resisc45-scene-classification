@@ -23,7 +23,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 GITHUB_URL = "https://github.com/esammostafa9-cloud/resisc45-scene-classification"
 
 MODEL_CARD = """---
-license: mit
+license: other
+license_name: research-and-educational-use
 library_name: keras
 pipeline_tag: image-classification
 tags:
@@ -74,6 +75,12 @@ ResNet-50 preprocessing is built into the model.
 
 Look-alike classes are the main error source: palace vs church, dense vs medium residential,
 railway vs railway station. The model is trained on top-down imagery only.
+
+## License and intended use
+
+The training code is MIT-licensed. These weights were trained on NWPU-RESISC45, whose authors
+have not published a license, so the model is shared for **non-commercial research and
+educational use** only. It is provided as is, without warranty of any kind.
 
 ## Dataset
 

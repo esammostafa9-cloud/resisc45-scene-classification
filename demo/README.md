@@ -21,3 +21,5 @@ categories it shows (airport, harbor, farmland, residential areas, and more).
 - **Code, training and evaluation:** https://github.com/esammostafa9-cloud/resisc45-scene-classification
 
 The example images come from the held-out test split of NWPU-RESISC45 (Cheng et al., 2017).
+They belong to their rights holders and are shown for research and educational illustration
+only. The demo code is MIT-licensed. The model is for non-commercial research and education.

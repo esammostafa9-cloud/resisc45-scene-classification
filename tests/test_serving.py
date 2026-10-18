@@ -170,4 +170,5 @@ def test_model_card_includes_real_metrics():
     rows = hub._metrics_rows(REPO_ROOT / "results" / "test_metrics.json")
     assert "| Accuracy | 0.9441 |" in rows
     card = hub.MODEL_CARD.format(github="g", repo="r", metrics_rows=rows)
-    assert card.startswith("---\nlicense: mit")
+    assert card.startswith("---\nlicense: other")
+    assert "non-commercial research" in card
