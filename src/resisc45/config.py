@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -47,7 +48,7 @@ class Config:
     @classmethod
     def from_yaml(cls, path: str | Path | None = None, **overrides) -> Config:
         """Load a config file (if given), then apply keyword overrides that are not None."""
-        values = {}
+        values: dict[str, Any] = {}
         if path is not None:
             with open(path, encoding="utf-8") as f:
                 values = yaml.safe_load(f) or {}

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from keras import layers
 
@@ -35,7 +37,5 @@ def test_config_yaml_round_trip(tmp_path):
 
 
 def test_default_yaml_matches_dataclass_defaults():
-    from pathlib import Path
-
     default_yaml = Path(__file__).parents[1] / "configs" / "default.yaml"
     assert Config.from_yaml(default_yaml) == Config()
