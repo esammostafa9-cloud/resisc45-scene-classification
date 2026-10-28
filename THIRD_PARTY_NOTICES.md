@@ -10,6 +10,11 @@ terms.
 - **Source:** [the dataset authors' page](https://gcheng-nwpu.github.io/), which identifies the
   dataset as a publicly available benchmark and licenses it under
   [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+- **Alternate copy:** [NWPU-RESISC45 on Figshare](https://figshare.com/articles/dataset/NWPU-RESISC45/19166525?file=34054286)
+  (DOI: [10.6084/m9.figshare.19166525.v1](https://doi.org/10.6084/m9.figshare.19166525.v1)). A published
+  paper lists this DOI as a location for a copy of NWPU-RESISC45. This is a download reference, not
+  the source of the license; the dataset authors' CC BY-NC 4.0 terms above still apply. This project
+  does not claim this particular copy was used to produce its results.
 - **Citation:** Gong Cheng, Junwei Han, and Xiaoqiang Lu, "Remote Sensing Image Scene
   Classification: Benchmark and State of the Art," *Proceedings of the IEEE*, 105(10),
   1865–1883, 2017. [doi:10.1109/JPROC.2017.2675998](https://doi.org/10.1109/JPROC.2017.2675998).
