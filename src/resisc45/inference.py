@@ -98,7 +98,8 @@ class Classifier:
     def predict_path(self, path: str | Path, top_k: int = 5) -> Prediction:
         path = Path(path)
         if path.stat().st_size > MAX_IMAGE_BYTES:
-            raise ValueError(f"{path.name} exceeds the {MAX_IMAGE_BYTES // (1024 * 1024)} MB limit.")
+            limit_mb = MAX_IMAGE_BYTES // (1024 * 1024)
+            raise ValueError(f"{path.name} exceeds the {limit_mb} MB limit.")
         return self.predict_bytes(path.read_bytes(), top_k)
 
     def to_prediction(self, prob: np.ndarray, top_k: int) -> Prediction:
