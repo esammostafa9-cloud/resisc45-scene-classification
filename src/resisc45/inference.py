@@ -17,6 +17,8 @@ import tensorflow as tf
 
 from .utils import load_json
 
+MAX_IMAGE_BYTES = 20 * 1024 * 1024
+
 
 @dataclass
 class Prediction:
@@ -48,7 +50,7 @@ class Classifier:
         """Load ``model.keras``; class names default to ``class_names.json`` beside it."""
         model_path = Path(model_path)
         names = load_json(class_names_path or model_path.parent / "class_names.json")
-        return cls(keras.models.load_model(model_path), names)
+        return cls(keras.models.load_model(model_path, compile=False, safe_mode=True), names)
 
     @classmethod
     def from_env(cls):
@@ -72,10 +74,15 @@ class Classifier:
 
     def predict_bytes(self, data: bytes, top_k: int = 5) -> Prediction:
         """Classify one encoded image (JPEG / PNG / BMP / GIF bytes)."""
+        if len(data) > MAX_IMAGE_BYTES:
+            raise ValueError(f"Image exceeds the {MAX_IMAGE_BYTES // (1024 * 1024)} MB limit.")
         return self.to_prediction(self.predict_proba([data])[0], top_k)
 
     def predict_path(self, path: str | Path, top_k: int = 5) -> Prediction:
-        return self.predict_bytes(Path(path).read_bytes(), top_k)
+        path = Path(path)
+        if path.stat().st_size > MAX_IMAGE_BYTES:
+            raise ValueError(f"{path.name} exceeds the {MAX_IMAGE_BYTES // (1024 * 1024)} MB limit.")
+        return self.predict_bytes(path.read_bytes(), top_k)
 
     def to_prediction(self, prob: np.ndarray, top_k: int) -> Prediction:
         order = np.argsort(prob)[::-1][: max(1, min(top_k, len(prob)))]

@@ -1,17 +1,17 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=83", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "resisc45"
 version = "1.0.0"
 description = "Remote sensing scene classification on NWPU-RESISC45 with a fine-tuned ResNet-50."
-authors = [{ name =  }]
+authors = [{ name = "esammostafa9-cloud" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "tensorflow>=2.16,<2.22",
+    "tensorflow>=2.21.0,<2.22",
     "numpy",
     "pandas",
     "scikit-learn",

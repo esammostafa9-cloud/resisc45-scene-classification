@@ -14,6 +14,8 @@ from sklearn.model_selection import train_test_split
 
 IMAGE_EXTS = (".jpg", ".jpeg", ".png")
 SPLITS = ("train", "val", "test")
+MAX_ARCHIVE_MEMBERS = 50_000
+MAX_ARCHIVE_UNCOMPRESSED_BYTES = 2 * 1024**3
 
 
 @dataclass
@@ -51,11 +53,17 @@ def extract_archive(zip_path: str | Path, dest: str | Path) -> Path:
     dest.mkdir(parents=True, exist_ok=True)
     dest_resolved = dest.resolve()
     with zipfile.ZipFile(zip_path) as zf:
-        for member in zf.namelist():
+        members = zf.infolist()
+        if len(members) > MAX_ARCHIVE_MEMBERS:
+            raise ValueError(f"Archive contains more than {MAX_ARCHIVE_MEMBERS} entries.")
+        total_size = sum(member.file_size for member in members)
+        if total_size > MAX_ARCHIVE_UNCOMPRESSED_BYTES:
+            raise ValueError("Archive expands beyond the 2 GiB safety limit.")
+        for member in members:
             # Refuse entries that would escape the destination folder ("zip slip").
-            if not (dest_resolved / member).resolve().is_relative_to(dest_resolved):
-                raise ValueError(f"Unsafe path in archive: {member}")
-        zf.extractall(dest)
+            if not (dest_resolved / member.filename).resolve().is_relative_to(dest_resolved):
+                raise ValueError(f"Unsafe path in archive: {member.filename}")
+        zf.extractall(dest, members=members)
     marker.touch()
     return dest
 

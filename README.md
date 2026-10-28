@@ -270,12 +270,11 @@ NWPU-RESISC45 was created at Northwestern Polytechnical University.
 
 The code is released under the [MIT License](LICENSE) and comes without warranty.
 
-The 8 example images and the figures that show them come from NWPU-RESISC45. They're included
-for research and educational illustration only, are not covered by the MIT License, and will be
-removed on request. Models trained on this dataset should only be used for non-commercial
-research and education. Details on the dataset, the pretrained weights and the dependencies are in
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+The 8 example images and their appearances in figures and the demo GIF come from NWPU-RESISC45.
+The dataset authors release it under CC BY-NC 4.0, so these images and models trained on the dataset
+are for non-commercial use only. They are not covered by this repository's MIT license. Attribution,
+the dataset citation, and the license are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Author
 
-esammostafa9-cloud ([@esammostafa9-cloud](https://github.com/esammostafa9-cloud))
+[@esammostafa9-cloud](https://github.com/esammostafa9-cloud)

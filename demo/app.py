@@ -152,4 +152,11 @@ Code: [GitHub]({GITHUB_URL})
 
 
 if __name__ == "__main__":
-    build_demo(Classifier.from_env()).launch(css=CSS, theme=gr.themes.Soft())
+    demo = build_demo(Classifier.from_env())
+    demo.queue(default_concurrency_limit=2, max_size=20)
+    demo.launch(
+        css=CSS,
+        theme=gr.themes.Soft(),
+        max_file_size=20 * 1024 * 1024,
+        show_error=False,
+    )

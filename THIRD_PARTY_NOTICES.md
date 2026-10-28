@@ -6,24 +6,25 @@ terms.
 
 ## NWPU-RESISC45 dataset
 
-- **Creators:** Gong Cheng, Junwei Han and Xiaoqiang Lu, Northwestern Polytechnical University
-- **Paper:** "Remote Sensing Image Scene Classification: Benchmark and State of the Art",
-  *Proceedings of the IEEE*, 105(10), 1865–1883, 2017.
-  [doi:10.1109/JPROC.2017.2675998](https://doi.org/10.1109/JPROC.2017.2675998)
-- **License:** not published by the authors. Mirrors list it as "unknown".
+- **Creators:** Gong Cheng, Junwei Han, and Xiaoqiang Lu.
+- **Source:** [the dataset authors' page](https://gcheng-nwpu.github.io/), which identifies the
+  dataset as a publicly available benchmark and licenses it under
+  [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+- **Citation:** Gong Cheng, Junwei Han, and Xiaoqiang Lu, "Remote Sensing Image Scene
+  Classification: Benchmark and State of the Art," *Proceedings of the IEEE*, 105(10),
+  1865–1883, 2017. [doi:10.1109/JPROC.2017.2675998](https://doi.org/10.1109/JPROC.2017.2675998).
+- **Use limit:** CC BY-NC 4.0 permits sharing and adaptation only for non-commercial purposes,
+  subject to attribution, a link to the license, and notice of changes. Commercial use is not
+  permitted under this dataset license.
 
-The dataset is **not** included in or distributed with this repository. You have to download it
-from the authors' source yourself.
+The full dataset is not included. The 8 images in `demo/examples/` are from the test split; they
+also appear in `reports/figures/example_predictions.png` and `reports/figures/demo.gif`. The report
+figure and GIF resize, crop, arrange, and annotate those images. Those figures are adaptations of
+the source images and are covered by the same non-commercial license and attribution terms.
 
-A small number of dataset images (8 test-split images in `demo/examples/`, also shown in
-`reports/figures/example_predictions.png` and `reports/figures/demo.gif`) are included to
-illustrate the model's output. They remain the property of their rights holders, are shown for
-non-commercial research and educational illustration only, and are **not** covered by this
-repository's MIT License.
-
-If you hold rights to any of these images and want them removed, please
-[open an issue](https://github.com/esammostafa9-cloud/resisc45-scene-classification/issues/new)
-on this repository, and they will be removed promptly.
+Attribution for these uses: "NWPU-RESISC45, by Gong Cheng, Junwei Han, and Xiaoqiang Lu; used and
+adapted under CC BY-NC 4.0." No endorsement by the dataset authors or Northwestern Polytechnical
+University is implied.
 
 ## Pretrained weights
 
