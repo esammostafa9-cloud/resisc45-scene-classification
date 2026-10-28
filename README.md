@@ -98,7 +98,11 @@ Then install the dependencies. The `[demo]` part adds Gradio for step 6.
 ```bash
 pip install -r requirements.txt
 pip install -e ".[demo]"
+pip install "pillow==13.0.0"
 ```
+
+Gradio currently declares a Pillow version cap below 13. The final command installs Pillow 13,
+which includes image-decoder security fixes; CI tests the demo and security checks with that version.
 
 ### 2. Get the dataset
 

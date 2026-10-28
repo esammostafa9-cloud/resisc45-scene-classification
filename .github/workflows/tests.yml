@@ -24,6 +24,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -e ".[dev]"
+          # Gradio currently caps Pillow below 13; upgrade after resolving its extras.
+          pip install "pillow==13.0.0"
       - name: Lint
         run: |
           ruff check src tests demo
@@ -47,6 +49,8 @@ jobs:
           python -m pip install --upgrade pip "setuptools>=83"
           pip install -r requirements.txt
           pip install -e ".[dev]"
+          # Gradio currently caps Pillow below 13; upgrade after resolving its extras.
+          pip install "pillow==13.0.0"
       - name: Static analysis (Bandit)
         run: bandit -r src demo
       - name: Known vulnerabilities in dependencies (pip-audit)
