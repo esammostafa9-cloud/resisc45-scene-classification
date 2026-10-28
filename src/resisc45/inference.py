@@ -7,6 +7,7 @@ training: decode, resize to the model's input size, raw 0-255 pixels. ResNet-50'
 
 from __future__ import annotations
 
+import io
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,10 +15,13 @@ from pathlib import Path
 import keras
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 
 from .utils import load_json
 
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
+MAX_IMAGE_PIXELS = 25_000_000
+ALLOWED_IMAGE_FORMATS = ("JPEG", "PNG", "BMP", "GIF")
 
 
 @dataclass
@@ -62,7 +66,20 @@ class Classifier:
             )
         return cls.from_path(path)
 
-    def _decode(self, data: bytes | tf.Tensor) -> tf.Tensor:
+    def _decode(self, data: bytes) -> tf.Tensor:
+        if len(data) > MAX_IMAGE_BYTES:
+            raise ValueError(f"Image exceeds the {MAX_IMAGE_BYTES // (1024 * 1024)} MB limit.")
+        try:
+            # Read dimensions from the header before TensorFlow expands compressed pixels.
+            with Image.open(io.BytesIO(data), formats=ALLOWED_IMAGE_FORMATS) as image:
+                if image.width * image.height > MAX_IMAGE_PIXELS:
+                    raise ValueError(
+                        f"Image exceeds the {MAX_IMAGE_PIXELS:,}-pixel limit."
+                    )
+        except ValueError:
+            raise
+        except Exception as error:
+            raise ValueError("Unsupported or invalid image file.") from error
         image = tf.io.decode_image(data, channels=3, expand_animations=False)
         image = tf.image.resize(image, [self.img_size, self.img_size])
         return tf.cast(image, tf.float32)

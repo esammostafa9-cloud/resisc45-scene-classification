@@ -58,6 +58,26 @@ def test_top_k_is_clamped_to_number_of_classes(classifier):
     assert sum(p for _, p in pred.top_k) == pytest.approx(1.0, abs=1e-4)
 
 
+def test_predict_bytes_rejects_image_over_pixel_limit(classifier):
+    import struct
+    import zlib
+
+    from resisc45.inference import MAX_IMAGE_PIXELS
+
+    def chunk(kind, data):
+        return (
+            struct.pack(">I", len(data))
+            + kind
+            + data
+            + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+        )
+
+    ihdr = struct.pack(">IIBBBBB", MAX_IMAGE_PIXELS + 1, 1, 8, 2, 0, 0, 0)
+    oversized = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IEND", b"")
+    with pytest.raises(ValueError, match="pixel limit"):
+        classifier.predict_bytes(oversized)
+
+
 def test_class_name_mismatch_is_rejected(classifier):
     with pytest.raises(ValueError, match="outputs"):
         Classifier(classifier.model, [*CLASSES, "extra"])

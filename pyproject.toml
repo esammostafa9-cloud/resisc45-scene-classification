@@ -17,13 +17,13 @@ dependencies = [
     "scikit-learn",
     "matplotlib",
     "pyyaml",
+    "pillow>=13.0.0",
 ]
 
 [project.optional-dependencies]
-# Starlette and Pillow are pinned to versions with known vulnerabilities fixed
-# (Starlette PYSEC-2026-161/-248/-249/-2280/-2281, Pillow PYSEC-2026-3454 and others).
-demo = ["gradio>=6.30,<7", "starlette>=1.3.1", "pillow>=12.3"]
-dev = ["pytest", "pillow", "ruff", "resisc45[demo]"]
+# These minimum versions include fixes for known Starlette and Pillow vulnerabilities.
+demo = ["gradio>=6.30,<7", "starlette>=1.3.1"]
+dev = ["pytest", "ruff", "bandit", "pip-audit", "resisc45[demo]"]
 
 [project.scripts]
 resisc45-train = "resisc45.train:main"
