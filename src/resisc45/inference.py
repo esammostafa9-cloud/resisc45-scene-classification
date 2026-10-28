@@ -73,9 +73,7 @@ class Classifier:
             # Read dimensions from the header before TensorFlow expands compressed pixels.
             with Image.open(io.BytesIO(data), formats=ALLOWED_IMAGE_FORMATS) as image:
                 if image.width * image.height > MAX_IMAGE_PIXELS:
-                    raise ValueError(
-                        f"Image exceeds the {MAX_IMAGE_PIXELS:,}-pixel limit."
-                    )
+                    raise ValueError(f"Image exceeds the {MAX_IMAGE_PIXELS:,}-pixel limit.")
         except ValueError:
             raise
         except Exception as error:
